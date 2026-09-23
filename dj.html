@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DJ Dashboard &mdash; Cherry Family Tailgate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#001e44; --navy2:#0a2f5c; --blue:#0072ce; --gold:#f5b324;
+    --ink:#12233f; --muted:#5b6b84; --line:#e3e9f2; --card:#ffffff;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; font-family:"Source Sans 3",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink); background:var(--navy);
+    background-image:
+      radial-gradient(1200px 500px at 50% -10%, rgba(0,114,206,.35), transparent 60%),
+      repeating-linear-gradient(115deg, rgba(255,255,255,.035) 0 2px, transparent 2px 9px);
+    min-height:100vh;
+  }
+  header{
+    position:sticky; top:0; z-index:5;
+    background:rgba(0,30,68,.92); backdrop-filter:blur(6px);
+    border-bottom:3px solid var(--gold);
+    padding:12px 18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  header img{ height:44px; width:auto; }
+  .h-title{ color:#fff; font-family:"Barlow Condensed",sans-serif; font-weight:700;
+    font-size:26px; letter-spacing:.06em; text-transform:uppercase; line-height:1; }
+  .h-sub{ color:#bcd0ea; font-size:13px; margin-top:2px; }
+  .spacer{ flex:1; }
+  .status-pill{
+    display:inline-flex; align-items:center; gap:8px; color:#fff;
+    font-family:"Barlow Condensed",sans-serif; font-weight:700; letter-spacing:.12em;
+    font-size:15px; padding:7px 14px; border-radius:999px; border:2px solid transparent;
+  }
+  .status-pill.open{ background:#0d7a3f; border-color:#35c26e; }
+  .status-pill.closed{ background:#8c1f28; border-color:#e05252; }
+  .live-dot{ width:9px; height:9px; border-radius:50%; background:#fff; animation:pulse 1.6s infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.35} }
+  .btn{
+    font-family:"Barlow Condensed",sans-serif; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    font-size:15px; border:none; border-radius:10px; padding:10px 18px; cursor:pointer; color:#fff;
+  }
+  .btn.danger{ background:#b3272e; } .btn.danger:hover{ background:#8c1f28; }
+  .btn.go{ background:#0d7a3f; } .btn.go:hover{ background:#0a5f31; }
+  .btn.resetbtn{ background:transparent; border:2px solid #9db1cf; color:#fff; }
+  .btn.resetbtn:hover{ border-color:#fff; }
+  .btn.resetbtn.armed{ background:#b3272e; border-color:#b3272e; }
+  .row-top{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .rowreset{
+    font-family:"Barlow Condensed",sans-serif; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+    font-size:12px; padding:4px 10px; border-radius:8px; cursor:pointer;
+    background:transparent; border:1.5px solid var(--line); color:var(--muted);
+    margin-left:auto; white-space:nowrap;
+  }
+  .rowreset:hover{ border-color:#b3272e; color:#b3272e; }
+  .rowreset.armed{ background:#b3272e; border-color:#b3272e; color:#fff; }
+  main{ max-width:860px; margin:0 auto; padding:20px 16px 60px; }
+  .stats{
+    display:flex; gap:12px; flex-wrap:wrap; margin:4px 0 14px;
+  }
+  .stat{
+    background:var(--card); border-radius:12px; padding:10px 16px; flex:1; min-width:150px;
+    box-shadow:0 2px 10px rgba(0,0,0,.25);
+  }
+  .stat .n{ font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:30px; line-height:1; color:var(--navy); }
+  .stat .l{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-top:2px; }
+  #search{
+    width:100%; padding:12px 16px; font-size:16px; border-radius:12px; border:2px solid var(--line);
+    margin-bottom:14px; font-family:inherit;
+  }
+  #search:focus{ outline:none; border-color:var(--blue); }
+  .card{
+    background:var(--card); border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.25);
+    overflow:hidden;
+  }
+  .row{ padding:10px 16px; border-bottom:1px solid var(--line); }
+  .row:last-child{ border-bottom:none; }
+  .row-top{ display:flex; align-items:baseline; gap:10px; }
+  .rank{
+    font-family:"Barlow Condensed",sans-serif; font-weight:700; color:var(--muted);
+    min-width:34px; font-size:17px;
+  }
+  .t{ font-weight:700; font-size:16px; }
+  .a{ color:var(--muted); font-size:13px; }
+  .badge{
+    font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    background:#eef4ff; color:var(--blue); border:1px solid #c9dcf7;
+    padding:2px 8px; border-radius:999px; white-space:nowrap;
+  }
+  .badge.writein{ background:#fff6e0; color:#8a5c00; border-color:#f0d48a; }
+  .pct{ margin-left:auto; font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:18px; color:var(--navy); white-space:nowrap; }
+  .votes{ color:var(--muted); font-size:13px; white-space:nowrap; }
+  .bar-track{ height:10px; background:#eef1f6; border-radius:999px; margin-top:8px; overflow:hidden; }
+  .bar-fill{
+    height:100%; border-radius:999px;
+    background:linear-gradient(90deg, var(--blue), #4aa3f0);
+    transition:width .5s ease;
+  }
+  .row.writein .bar-fill{ background:linear-gradient(90deg, #d99a17, var(--gold)); }
+  .empty{ padding:34px 20px; text-align:center; color:var(--muted); }
+  .note{ color:#9db1cf; font-size:13px; text-align:center; margin-top:18px; }
+  .err{ background:#fff; border-left:5px solid #b3272e; padding:12px 16px; border-radius:10px; margin-bottom:14px; }
+</style>
+</head>
+<body>
+<header>
+  <img src="logo.png" alt="Penn State Nittany Lions logo">
+  <div>
+    <div class="h-title">DJ Dashboard</div>
+    <div class="h-sub">Cherry Family Tailgate &mdash; full results</div>
+  </div>
+  <div class="spacer"></div>
+  <span id="status" class="status-pill open"><span class="live-dot"></span>OPEN</span>
+  <button id="toggle" class="btn danger">Stop voting</button>
+  <button id="reset" class="btn resetbtn">Reset votes</button>
+</header>
+<main>
+  <div class="stats">
+    <div class="stat"><div class="n" id="stat-votes">0</div><div class="l">Total votes</div></div>
+    <div class="stat"><div class="n" id="stat-songs">0</div><div class="l">Songs on ballot</div></div>
+    <div class="stat"><div class="n" id="stat-writeins">0</div><div class="l">Family requests</div></div>
+  </div>
+  <div id="errbox"></div>
+  <input id="search" type="search" placeholder="Search songs or artists&hellip;" autocomplete="off">
+  <div class="card" id="results"><div class="empty">Connecting&hellip;</div></div>
+  <p class="note">DJ only &mdash; keep this link private. Guests should only get the vote link. Results refresh automatically.</p>
+</main>
+<script>
+var DB = "https://tailgate-votes-default-rtdb.firebaseio.com";
+var REFRESH_MS = 5000;
+
+function $(id){ return document.getElementById(id); }
+function norm(s){ return String(s||"").trim().toLowerCase().replace(/\s+/g," "); }
+function esc(s){ return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+
+function api(path, method, body){
+  var opts = { method: method || "GET" };
+  if(body !== undefined){ opts.headers = {"Content-Type":"application/json"}; opts.body = JSON.stringify(body); }
+  return fetch(DB + path + ".json", opts).then(function(r){
+    if(!r.ok) throw new Error("db "+r.status);
+    return r.json();
+  });
+}
+function dbGet(p){ return api(p,"GET"); }
+function dbPut(p,v){ return api(p,"PUT",v); }
+
+/* Build one canonical list: seeded songs + write-ins merged in.
+   A write-in matching an existing song title folds into that song. */
+function buildCatalog(options, writeins){
+  var list = [], byNorm = {};
+  (options||[]).forEach(function(o){
+    if(!o || !o.t) return;
+    var e = { id:o.id, title:String(o.t).trim(), artist:o.a||"", group:o.g||"", writein:false, votes:0 };
+    list.push(e); byNorm[norm(o.t)] = e;
+  });
+  Object.keys(writeins||{}).forEach(function(k){
+    var w = writeins[k]||{};
+    var t = w.t || w.title || "";
+    if(!t) return;
+    if(byNorm[norm(t)]) return;               // already on the ballot — votes fold in
+    var e = { id:"w:"+k, title:String(t).trim(), artist:"", group:"Family Requests", writein:true, votes:0 };
+    list.push(e); byNorm[norm(t)] = e;
+  });
+  return { list:list, byNorm:byNorm };
+}
+
+/* Count every vote, however it was recorded:
+   {o: optionId} | {o:"w:<key>"} (family-request tap) | {w:"Title"} (write-in vote).
+   Each entry also collects its vote keys so single songs can be reset. */
+function tally(catalog, writeins, votes){
+  var byId = {};
+  catalog.list.forEach(function(e){ byId[e.id] = e; e.keys = []; });
+  Object.keys(votes||{}).forEach(function(k){
+    var v = votes[k]||{}, e = null;
+    if(v.o){
+      if(v.o.indexOf("w:") === 0){
+        var w = (writeins||{})[v.o.slice(2)] || {};
+        var t = w.t || w.title;
+        if(t) e = catalog.byNorm[norm(t)];
+      }else{
+        e = byId[v.o];
+      }
+    }else if(v.w){
+      var n = norm(v.w);
+      e = catalog.byNorm[n];
+      if(!e){  // vote arrived before its write-in option did — list it anyway
+        e = { id:"w:late:"+n, title:String(v.w).trim(), artist:"", group:"Family Requests", writein:true, votes:0 };
+        catalog.list.push(e); catalog.byNorm[n] = e;
+      }
+    }
+    if(e){ e.votes++; e.keys.push(k); }
+  });
+}
+
+var lastData = null;
+function render(){
+  var q = norm($("search").value);
+  var box = $("results");
+  if(!lastData){ box.innerHTML = '<div class="empty">Connecting&hellip;</div>'; return; }
+  var total = lastData.total;
+  var rows = lastData.catalog.list.slice().sort(function(a,b){
+    if(b.votes !== a.votes) return b.votes - a.votes;
+    return a.title.localeCompare(b.title);
+  });
+  if(q){
+    rows = rows.filter(function(e){ return norm(e.title).indexOf(q) >= 0 || norm(e.artist).indexOf(q) >= 0; });
+  }
+  $("stat-votes").textContent = total;
+  $("stat-songs").textContent = lastData.catalog.list.length;
+  $("stat-writeins").textContent = lastData.catalog.list.filter(function(e){ return e.writein; }).length;
+  if(!rows.length){
+    box.innerHTML = '<div class="empty">No songs match your search.</div>';
+    return;
+  }
+  var html = "";
+  rows.forEach(function(e, i){
+    var pct = total ? Math.round(e.votes/total*1000)/10 : 0;
+    var badge = e.writein
+      ? '<span class="badge writein">Family request</span>'
+      : (e.group ? '<span class="badge">'+esc(e.group)+'</span>' : '');
+    var artist = e.artist ? '<span class="a">&mdash; '+esc(e.artist)+'</span>' : "";
+    html +=
+      '<div class="row'+(e.writein ? ' writein' : '')+'">' +
+        '<div class="row-top"><span class="rank">'+(i+1)+'.</span>' +
+        '<span><span class="t">'+esc(e.title)+'</span> '+artist+' '+badge+'</span>' +
+        '<span class="pct">'+pct+'%</span>' +
+        '<span class="votes">('+e.votes+(e.votes===1 ? ' vote' : ' votes')+')</span>' +
+        '<button class="rowreset" data-id="'+esc(e.id)+'">Reset</button></div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div>' +
+      '</div>';
+  });
+  box.innerHTML = html;
+  Array.prototype.forEach.call(box.querySelectorAll(".rowreset"), function(btn){
+    btn.onclick = function(){ armRowReset(btn); };
+  });
+}
+
+/* Two-tap confirm for per-song reset (works everywhere, no popup needed). */
+var armedRowBtn = null, armedRowTimer = null;
+function disarmRow(){
+  if(armedRowBtn){ armedRowBtn.textContent = "Reset"; armedRowBtn.classList.remove("armed"); armedRowBtn = null; }
+  if(armedRowTimer){ clearTimeout(armedRowTimer); armedRowTimer = null; }
+}
+function armRowReset(btn){
+  var entry = lastData && lastData.byId ? lastData.byId[btn.getAttribute("data-id")] : null;
+  if(!entry) return;
+  if(armedRowBtn === btn){
+    disarmRow();
+    if(!entry.keys.length){ alert("No votes to clear for \u201C"+entry.title+"\u201D yet."); return; }
+    var patch = {};
+    entry.keys.forEach(function(k){ patch[k] = null; });
+    api("/votes", "PATCH", patch).then(refresh)
+      .catch(function(){ alert("Could not reset that song \u2014 check connection."); });
+    return;
+  }
+  disarmRow();
+  armedRowBtn = btn;
+  btn.textContent = "Sure?";
+  btn.classList.add("armed");
+  armedRowTimer = setTimeout(disarmRow, 3000);
+}
+
+function refresh(){
+  return Promise.all([dbGet("/options"), dbGet("/writein_options"), dbGet("/votes"), dbGet("/poll")])
+    .then(function(res){
+      var options = res[0], writeins = res[1]||{}, votes = res[2]||{}, poll = res[3]||{open:true};
+      $("errbox").innerHTML = "";
+      if(!options || !options.length){
+        $("errbox").innerHTML = '<div class="err">Song list isn&rsquo;t loaded yet &mdash; open the kiosk or vote page once to seed it, then reload this page.</div>';
+      }
+      var catalog = buildCatalog(options, writeins);
+      tally(catalog, writeins, votes);
+      var total = catalog.list.reduce(function(s,e){ return s + e.votes; }, 0);
+      var byId = {};
+      catalog.list.forEach(function(e){ byId[e.id] = e; });
+      lastData = { catalog:catalog, total:total, byId:byId };
+      var open = poll.open !== false;
+      var pill = $("status");
+      pill.className = "status-pill " + (open ? "open" : "closed");
+      pill.innerHTML = '<span class="live-dot"></span>' + (open ? "OPEN" : "CLOSED");
+      var tog = $("toggle");
+      tog.textContent = open ? "Stop voting" : "Start voting";
+      tog.className = "btn " + (open ? "danger" : "go");
+      render();
+    })
+    .catch(function(){
+      $("errbox").innerHTML = '<div class="err">Connection issue &mdash; retrying&hellip;</div>';
+    });
+}
+
+$("toggle").onclick = function(){
+  dbGet("/poll").then(function(p){
+    var open = !p || p.open !== false;
+    return dbPut("/poll", { open: !open });
+  }).then(refresh).catch(function(){ alert("Could not change poll state \u2014 check connection."); });
+};
+/* Two-tap confirm for the global reset (no popup needed). */
+var resetArmed = false, resetTimer = null;
+$("reset").onclick = function(){
+  var btn = $("reset");
+  if(resetArmed){
+    resetArmed = false;
+    if(resetTimer){ clearTimeout(resetTimer); resetTimer = null; }
+    btn.textContent = "Reset votes";
+    btn.classList.remove("armed");
+    dbPut("/votes", null).then(refresh)
+      .catch(function(){ alert("Could not reset votes \u2014 check connection."); });
+    return;
+  }
+  resetArmed = true;
+  btn.textContent = "Tap again to confirm";
+  btn.classList.add("armed");
+  btn.title = "Clears all vote counts. Songs and family requests stay on the ballot.";
+  resetTimer = setTimeout(function(){
+    resetArmed = false; resetTimer = null;
+    btn.textContent = "Reset votes"; btn.classList.remove("armed");
+  }, 4000);
+};
+$("search").oninput = render;
+
+refresh();
+setInterval(refresh, REFRESH_MS);
+</script>
+</body>
+</html>
